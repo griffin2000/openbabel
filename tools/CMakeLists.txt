@@ -140,9 +140,10 @@ else(BUILD_SHARED)
   target_link_libraries(obabel ${libs})
 
   if(NOT BUILD_MIXED)
+    #GAM disable as static flags break the link when using static libs
     # Prevent -Wl,-Bdynamic from being added to the end of the link line.
-    set_target_properties(babel PROPERTIES LINK_SEARCH_END_STATIC TRUE)
-    set_target_properties(obabel PROPERTIES LINK_SEARCH_END_STATIC TRUE)
+    #set_target_properties(babel PROPERTIES LINK_SEARCH_END_STATIC TRUE)
+    #set_target_properties(obabel PROPERTIES LINK_SEARCH_END_STATIC TRUE)
   endif(NOT BUILD_MIXED)
 
   install(TARGETS babel

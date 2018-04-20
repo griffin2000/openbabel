@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #ifndef OB_UTIL_H
 #define OB_UTIL_H
 
+
 #include <openbabel/babelconfig.h>
 
 #include <string>
@@ -38,6 +39,13 @@ GNU General Public License for more details.
 
 #include <math.h>
 
+//GAM - This should be handled by CMake config, but doesn't seem to work correctly on Emscripten builds
+#if USING_EMSCRIPTEN
+#define USE_CLOCK_T 0
+#else
+#define USE_CLOCK_T HAVE_CLOCK_T
+#endif
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -51,7 +59,7 @@ namespace OpenBabel
   // class introduction in obutil.cpp
   class OBAPI OBStopwatch
   {
-#if HAVE_CLOCK_T
+#if USE_CLOCK_T
     clock_t start; //!< the start of timing
     clock_t stop;  //!< the current time
 #else
@@ -60,8 +68,7 @@ namespace OpenBabel
 #endif
 
   public:
-#if HAVE_CLOCK_T
-
+#if USE_CLOCK_T
     //! Mark the start of "stopwatch" timing
     void  Start()
     {

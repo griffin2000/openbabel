@@ -6,6 +6,13 @@ endif()
 project(openbabel)
 set(CMAKE_MODULE_PATH ${openbabel_SOURCE_DIR}/cmake/modules)
 
+#GAM - If we are compiling with Emscripten set USING_EMSCRIPTEN 
+if( "${CMAKE_C_COMPILER}" MATCHES "emcc" )
+	set(USING_EMSCRIPTEN TRUE)
+else()
+	set(USING_EMSCRIPTEN FALSE)
+endif()
+
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
   cmake_policy(SET CMP0005 OLD) # add_definitions need updating to set to NEW
@@ -101,7 +108,17 @@ if(GLIBC_24_COMPATIBLE AND UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,--wrap=memcpy")
 endif()
 
-option(BUILD_SHARED "enable shared build support" ON)
+
+#GAM Disable shared build as we want static lib
+option(BUILD_SHARED "enable shared build support" OFF)
+
+#GAM PIE required for static lib
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -O3")
+
+#GAM Add optimization to release build
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3")
+
+
 option(BUILD_MIXED "enable linux relocatable binaries support" OFF)
 option(WITH_STATIC_INCHI "enable static inchi and related plugins" OFF)
 option(WITH_STATIC_LIBXML "enable static libxml and xml file format plugins" OFF)
@@ -140,6 +157,9 @@ endif()
 option(WITH_INCHI   "Build inchi support" ON)
 option(OPENBABEL_USE_SYSTEM_INCHI
   "Use the system inchi library." OFF)
+  
+#GAM OPENBABEL_USE_SYSTEM_INCHI always true for Windows for some reason, so disable
+if(NOT WIN32)
 if(OPENBABEL_USE_SYSTEM_INCHI)
   find_package(Inchi REQUIRED)
   if (NOT INCHI_FOUND)
@@ -150,14 +170,30 @@ else()
   set(INCHI_LIBRARY inchi)
 endif()
 
-if(WIN32)
-  # FIXME: not used on windows... - inconsistency
-  set(MODULE_EXTENSION ".obf")
-else()
-  set(MODULE_EXTENSION ".so")
 endif()
 
+if(USING_EMSCRIPTEN)
+	#GAM generate bytecode files in Emscripten mode
+	set(MODULE_EXTENSION ".bc")
+	#GAM add pre-proc definition for Emscripten
+	add_definitions(-DUSING_EMSCRIPTEN=1)  
+  
+	#GAM add  WASM flag
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s WASM=1")
+
+else()
+	#GAM add pre-proc definition for Emscripten
+	add_definitions(-DUSING_EMSCRIPTEN=0)  
+	if(WIN32)
+	  # FIXME: not used on windows... - inconsistency
+	  set(MODULE_EXTENSION ".obf")
+	else()
+	  set(MODULE_EXTENSION ".so")
+	endif()
+endif()
 # configure checks
+
+if(NOT USING_EMSCRIPTEN)
 find_package(LibXml2)
 if(NOT LIBXML2_FOUND)
   message(WARNING "libxml2 not found - disabling CML support!")
@@ -180,6 +216,7 @@ if(wxWidgets_FOUND)
   include(${wxWidgets_USE_FILE})
   add_definitions(-DHAVE_WXWIDGETS)
   include_directories(${wxWidgets_INCLUDE_DIRS})
+endif()
 endif()
 
 if(MSVC)
@@ -446,7 +483,11 @@ include_directories(${openbabel_BINARY_DIR}/include
   ${openbabel_SOURCE_DIR}/include
 )
 
+#GAM no dependencies in emscripten mode
+if(NOT USING_EMSCRIPTEN)
+
 #cjh
+
 find_package(Eigen3)
 if(EIGEN3_FOUND)
   add_definitions(-DHAVE_EIGEN -DHAVE_EIGEN3)
@@ -458,6 +499,7 @@ else()
     include_directories(${EIGEN2_INCLUDE_DIR})
   endif()
 endif()
+
 #cjh
 
 option(WITH_JSON "Build JSON support" ON)
@@ -495,6 +537,8 @@ if(CAIRO_FOUND)
 else(CAIRO_FOUND)
   message(STATUS "Could NOT find Cairo. PNG output will NOT be supported.")
 endif(CAIRO_FOUND)
+
+endif()
 
 # Should we enable optimizations for the native CPU architecture?
 # (this will speed up JSON handling, similarity calculations and maybe those involving Eigen)

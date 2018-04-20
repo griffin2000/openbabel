@@ -70,7 +70,7 @@ set(ops
   ops/delnonpolarh.cpp
   ops/gen2D.cpp
   ops/fillUC.cpp
-  ops/forcefield.cpp
+  ops/forcefieldOp.cpp
   ops/gen3d.cpp
   ops/largest.cpp
   ops/loader.cpp

@@ -140,7 +140,8 @@ endif()
 add_executable(test_runner ${srclist} obtest.cpp)
 target_link_libraries(test_runner ${libs})
 if(NOT BUILD_SHARED AND NOT BUILD_MIXED)
-  set_target_properties(test_runner PROPERTIES LINK_SEARCH_END_STATIC TRUE)
+  #GAM disable as static flags break the link when using static libs
+  #set_target_properties(test_runner PROPERTIES LINK_SEARCH_END_STATIC TRUE)
 endif()
 
 foreach(cpptest ${cpptests})
@@ -197,7 +198,8 @@ endif(WITH_INCHI)
 add_executable(roundtrip roundtrip.cpp)
 target_link_libraries(roundtrip ${libs})
 if(NOT BUILD_SHARED AND NOT BUILD_MIXED)
-  set_target_properties(roundtrip PROPERTIES LINK_SEARCH_END_STATIC TRUE)
+  #GAM disable as static flags break the link when using static libs
+  #set_target_properties(roundtrip PROPERTIES LINK_SEARCH_END_STATIC TRUE)
 endif()
 install(TARGETS roundtrip
                 RUNTIME DESTINATION bin
